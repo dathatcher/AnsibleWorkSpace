@@ -1,0 +1,21 @@
+Ansible Playbooks
+
+ansible-playbook combined_fetch_jira.yml --ask-vault-pass
+
+ansible-playbook fetch_jira_ticket.yml
+
+ansible-playbook github_check.yml
+
+ansible-playbook github_branch_check.yml
+
+#Ansible setup
+
+sudo apt remove --purge -y ansible
+
+pip3 uninstall -y ansible
+
+pip3 install --user ansible
+
+pip3 install --user ansible
+
+ansible --version
