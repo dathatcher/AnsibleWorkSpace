@@ -3,7 +3,7 @@
   gather_facts: no
   vars:
     jira_base_url: "https://davidaustinthatcher.atlassian.net" 
-    jira_api_token: ""
+    jira_api_token: "add token"
     jira_user_email: "david.austin.thatcher@gmail.com"
     jira_ticket: "SCRUM-1"  # Hardcoded Jira ticket number
 
