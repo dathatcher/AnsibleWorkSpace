@@ -1,0 +1,27 @@
+- name: Fetch Jira Ticket Information
+  hosts: localhost
+  gather_facts: no
+  vars:
+    jira_base_url: "https://davidaustinthatcher.atlassian.net" 
+    jira_api_token: "ATATT3xFfGF0ONqyRMZDxlD1PJfZ7yygYWEu9wT_6sbdTVrBJOzD1yZyKcngHYLabe-QRcT7765kW_iTxShy9widdCf4oJADX4a4JRBWPkqN-fCo9lWZlOdPUMV2_4WqVkdMACCRtZ43El-NlXD8bikc1fcWUQS7W1RftAQulP31hWOZZMoS-b0=7EC3DFB4"
+    jira_user_email: "david.austin.thatcher@gmail.com"
+    jira_ticket: "SCRUM-1"  # Hardcoded Jira ticket number
+
+  tasks:
+    - name: Fetch Jira Ticket Data
+      uri:
+        url: "{{ jira_base_url }}/rest/api/2/issue/{{ jira_ticket }}"
+        method: GET
+        headers:
+          Authorization: "Basic {{ (jira_user_email + ':' + jira_api_token) | b64encode }}"
+          Accept: "application/json"
+        return_content: yes
+      register: jira_response
+
+    - name: Show Full Jira API Response
+      debug:
+        msg: "{{ jira_response.json }}"
+
+    - name: Extract Specific Fields
+      debug:
+        msg: "Ticket: {{ jira_response.json.key }} | Status: {{ jira_response.json.fields.status.name }} | Summary: {{ jira_response.json.fields.summary }}"
