@@ -6,6 +6,7 @@
     jira_api_token: ""
     jira_user_email: "david.austin.thatcher@gmail.com"
     branch_prefix: "SCRUM-1"  # Prefix to search for in GitHub branches
+    custom_field_id: "customfield_10038"  # Replace with your actual custom field ID
 
   tasks:
     - name: Clone GitHub Repository
@@ -46,8 +47,8 @@
       loop: "{{ jira_tickets }}"
       when: jira_tickets | length > 0
 
-    - name: Display Jira Ticket Details
+    - name: Display Jira Custom Field Data
       debug:
-        msg: "Ticket: {{ item.json.key }} | Status: {{ item.json.fields.status.name }} | Summary: {{ item.json.fields.summary }}"
+        msg: "Ticket: {{ item.json.key }} | Custom Field Value: {{ item.json.fields[custom_field_id] | default('Not Set') }}"
       loop: "{{ jira_response.results }}"
       when: jira_tickets | length > 0
