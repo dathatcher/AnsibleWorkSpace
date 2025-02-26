@@ -3,7 +3,7 @@
   gather_facts: no
   vars:
     jira_base_url: "https://davidaustinthatcher.atlassian.net" 
-    jira_api_token: "ATATT3xFfGF0r1AYwo8paGeQzDSjQABHSk_hTXUuUT6a5kq3CjDU9CORrm2Vnb1Z8ik41LDUvySrIwUm8NEe5ObFbAy8ZlBakiqVYInU21b7bE3loGKrdJrCTXHMJzB4Pv3ZUCj3cb4uZVkN6fIgys5n-2ayvpThrF12wRgpPPvJWIKu3LQ3a8A=1B84D2EC"
+    jira_api_token: ""
     jira_user_email: "david.austin.thatcher@gmail.com"
     branch_prefix: "SCRUM-1"  # Prefix to search for in GitHub branches
 
