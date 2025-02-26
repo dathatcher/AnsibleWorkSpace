@@ -6,7 +6,7 @@
     jira_api_token: ""
     jira_user_email: "david.austin.thatcher@gmail.com"
     branch_prefix: "SCRUM-1"  # Prefix to search for in GitHub branches
-    custom_field_id: "customfield_10038"  # Replace with your actual custom field ID
+    custom_field_id: "customfield_10039"  # Replace with your actual custom field ID
 
   tasks:
     - name: Clone GitHub Repository
