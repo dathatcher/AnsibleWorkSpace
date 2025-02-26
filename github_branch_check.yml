@@ -9,19 +9,29 @@
         force: yes
       register: repo_clone
 
-    - name: Fetch all branches
-      shell: "cd /tmp/github_repo && git branch -r | sed 's/origin\\///g'"
+    - name: Fetch all remote branches
+      shell: |
+        cd /tmp/github_repo
+        git fetch --all --prune
+        git branch -r | sed 's/origin\///g' | awk '{$1=$1;print}'
       register: branch_list
 
-    - name: Filter branches starting with 'Dave'
+    - name: Debug - Show Raw Branch Output
+      debug:
+        msg: "{{ branch_list.stdout_lines }}"
+
+    - name: Filter branches starting with 'dathatcher-'
       set_fact:
-        dave_branches: "{{ branch_list.stdout_lines | select('search', '^dathatch') | list }}"
+        dave_branches: "{{ branch_list.stdout_lines | map('trim') | select('search', '^dathatcher-patch-1') | list }}"
 
     - name: Display Matching Branches
       debug:
-        msg: "Branches starting with 'Dave': {{ dave_branches }}"
+        msg: "Branches starting with 'dathatcher': {{ dave_branches }}"
 
     - name: Process Each Matching Branch
-      shell: "cd /tmp/github_repo && git checkout {{ item }} && echo 'Processing branch: {{ item }}'"
+      shell: |
+        cd /tmp/github_repo
+        git checkout {{ item }}
+        echo 'Processing branch: {{ item }}'
       loop: "{{ dave_branches }}"
       when: dave_branches | length > 0
