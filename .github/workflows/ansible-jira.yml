@@ -20,5 +20,6 @@ jobs:
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_USER_EMAIL: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: |
-          ansible-playbook -i "localhost," --connection=local combined_fetch_jira_v3.yml
+          ansible-playbook -i "localhost," --connection=local combined_fetch_jira_v4.yml
