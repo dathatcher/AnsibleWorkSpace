@@ -7,10 +7,10 @@
     jira_user_email: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"
     branch_prefix: "SCRUM-1"  # Prefix to search for in GitHub branches
     custom_field_id: "customfield_10039"  # Replace with your actual custom field ID
-    email_recipient: "david.austin.thatcher@gmail.com"  # Change this to the email recipient
+    email_recipient: "{{ lookup('env', 'TO_EMAIL') }}"  # Change this to the email recipient
     smtp_server: "smtp.gmail.com"
     smtp_port: 587
-    smtp_username: "david.austin.thatcher@gmail.com"  # Your Gmail address
+    smtp_username: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"  # Your Gmail address
     smtp_password: "{{ lookup('env', 'GMAIL_APP_PASSWORD') }}"  # Your Google App Password
 
   tasks:
