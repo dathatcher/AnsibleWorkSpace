@@ -5,7 +5,7 @@
     jira_base_url: "https://davidaustinthatcher.atlassian.net" 
     jira_api_token: "{{ lookup('env', 'JIRA_API_TOKEN') }}"
     jira_user_email: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"
-    branch_prefix: "SCRUM-1"  # Prefix to search for in GitHub branches
+    branch_prefix: "SCRUM-"  # Prefix to search for in GitHub branches
     custom_field_id: "customfield_10039"  # Replace with your actual custom field ID
     email_recipient: "{{ lookup('env', 'TO_EMAIL') }}"  # Change this to the email recipient
     smtp_server: "smtp.gmail.com"
