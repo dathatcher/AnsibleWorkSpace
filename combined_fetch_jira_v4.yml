@@ -56,9 +56,9 @@
         username: "{{ smtp_username }}"
         password: "{{ smtp_password }}"
         to: "{{ email_recipient }}"
-        subject: "DB Object Test from JIRA"
+        subject: "DB Objects in next release"
         body: |
-          The following DB Objects were extracted from Jira:
+          The following DB Objects were extracted from Jira tickets in the next release:
 
           {% for item in jira_response.results %}
           Ticket: {{ item.json.key }}
