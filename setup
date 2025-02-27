@@ -1,5 +1,7 @@
 Ansible Playbooks
 
+ansible-playbook combined_fetch_jira_v2.yml
+
 ansible-playbook combined_fetch_jira.yml --ask-vault-pass
 
 ansible-playbook fetch_jira_ticket.yml
