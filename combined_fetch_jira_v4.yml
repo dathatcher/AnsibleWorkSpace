@@ -16,7 +16,7 @@
   tasks:
     - name: Clone GitHub Repository
       git:
-        repo: "https://github.com/dathatcher/HelloWorld.git"
+        repo: "hhttps://github.com/dathatcher/AnsibleWorkSpace.git"
         dest: "/tmp/github_repo"
         force: yes
       register: repo_clone
