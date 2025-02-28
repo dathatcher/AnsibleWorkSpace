@@ -62,7 +62,7 @@
 
           {% for item in jira_response.results %}
           Ticket: {{ item.json.key }}
-          DB Object Value: {{ item.json.fields[custom_field_id] | default('Not Set') }}
+          DB Object Value: {{ item.json.fields[vars['custom_field_id']] | default('Not Set') }}
           {% endfor %}
 
           This is an automated message from Ansible.
