@@ -16,6 +16,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Get PR Source Branch
+        run: echo "PR_BRANCH=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+
       - name: Install Ansible
         run: sudo apt update && sudo apt install -y ansible
 
@@ -25,5 +28,6 @@ jobs:
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           TO_EMAIL: ${{ secrets.TO_EMAIL }}
+          PR_BRANCH: ${{ env.PR_BRANCH }}  # Pass the PR branch to Ansible
         run: |
           ansible-playbook -i "localhost," --connection=local combined_fetch_jira_v4.yml

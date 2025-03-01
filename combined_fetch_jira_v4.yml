@@ -5,49 +5,44 @@
     jira_base_url: "https://davidaustinthatcher.atlassian.net" 
     jira_api_token: "{{ lookup('env', 'JIRA_API_TOKEN') }}"
     jira_user_email: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"
+    pr_branch: "{{ lookup('env', 'PR_BRANCH') }}"  # PR source branch
     branch_prefix: "SCRUM-"  # Prefix to search for in GitHub branches
-    custom_field_id: "customfield_10039"  # Replace with your actual custom field ID
-    email_recipient: "{{ lookup('env', 'TO_EMAIL') }}"  # Change this to the email recipient
+    custom_field_id: "customfield_10039"  # Custom field in Jira
+    email_recipient: "{{ lookup('env', 'TO_EMAIL') }}"  
     smtp_server: "smtp.gmail.com"
     smtp_port: 587
-    smtp_username: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"  # Your Gmail address
-    smtp_password: "{{ lookup('env', 'GMAIL_APP_PASSWORD') }}"  # Your Google App Password
+    smtp_username: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"  
+    smtp_password: "{{ lookup('env', 'GMAIL_APP_PASSWORD') }}"  
 
   tasks:
-    - name: Clone GitHub Repository
-      git:
-        repo: "https://github.com/dathatcher/AnsibleWorkSpace.git"
-        dest: "/tmp/github_repo"
-        force: yes
-      register: repo_clone
-
-    - name: Fetch all remote branches
-      shell: |
-        cd /tmp/github_repo
-        git fetch --all --prune
-        git branch -r | sed 's/origin\///g' | awk '{$1=$1;print}'
-      register: branch_list
-
-    - name: Extract Jira Ticket Number from Matching Branches
+    - name: Extract Jira Ticket Number from PR Branch
       set_fact:
-        jira_tickets: "{{ branch_list.stdout_lines | select('search', '^' + branch_prefix) | map('regex_replace', '^' + branch_prefix + '(\\d+).*', branch_prefix + '\\1') | list }}"
+        jira_ticket: "{{ pr_branch | regex_replace('^' + branch_prefix + '(\\d+).*', branch_prefix + '\\1') }}"
 
-    - name: Fetch Jira Ticket Data for Each Extracted Ticket
+    - name: Display Extracted Jira Ticket Number
+      debug:
+        msg: "Extracted Jira Ticket: {{ jira_ticket }}"
+
+    - name: Fetch Jira Ticket Data
       uri:
-        url: "{{ jira_base_url }}/rest/api/2/issue/{{ item }}"
+        url: "{{ jira_base_url }}/rest/api/2/issue/{{ jira_ticket }}"
         method: GET
         headers:
           Authorization: "Basic {{ (jira_user_email + ':' + jira_api_token) | b64encode }}"
           Accept: "application/json"
         return_content: yes
       register: jira_response
-      loop: "{{ jira_tickets }}"
-      when: jira_tickets | length > 0
+      when: jira_ticket is not none
 
-    - name: Extract DB Object Values
+    - name: Extract DB Object Value
       set_fact:
-        db_objects: "{{ jira_response.results | map(attribute='json.fields') | map(attribute=custom_field_id, default='Not Set') | list }}"
-      when: jira_tickets | length > 0
+        db_object: "{{ jira_response.json.fields[custom_field_id] | default('') }}"
+      when: jira_ticket is not none
+
+    - name: Check if DB Object is Set
+      set_fact:
+        send_email: "{{ db_object | length > 0 }}"
+      when: jira_ticket is not none
 
     - name: Send Email with Jira DB Object Information
       mail:
@@ -58,14 +53,12 @@
         to: "{{ email_recipient }}"
         subject: "DB Objects in Stage Ready for Deployment"
         body: |
-          The following DB Objects were extracted from Jira tickets in and delivered to QA:
+          The following DB Object was extracted from Jira ticket {{ jira_ticket }}:
 
-          {% for item in jira_response.results %}
-          Ticket: {{ item.json.key }}
-          DB Object Value: {{ item.json.fields[vars['custom_field_id']] | default('Not Set') }}
-          {% endfor %}
+          Ticket: {{ jira_ticket }}
+          DB Object Value: {{ db_object }}
 
           This is an automated message from Ansible.
         subtype: plain
         secure: starttls
-      when: jira_tickets | length > 0
+      when: send_email | default(false)
