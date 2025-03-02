@@ -56,6 +56,9 @@
           The following DB Objects for Jira ticket {{ jira_ticket }} are required to be pushed to QA:
 
           Ticket: {{ jira_ticket }}
+
+          Link to Ticket: https://davidaustinthatcher.atlassian.net/browse/{{ jira_ticket }}
+
           DB Object Value: {{ db_object }}
 
           This is an automated message from Ansible.
