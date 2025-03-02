@@ -51,9 +51,9 @@
         username: "{{ smtp_username }}"
         password: "{{ smtp_password }}"
         to: "{{ email_recipient }}"
-        subject: "DB Objects in Stage Ready for Deployment"
+        subject: {{ jira_ticket }}" - DB Objects Request push to QA"
         body: |
-          The following DB Object was extracted from Jira ticket {{ jira_ticket }}:
+          The following DB Objects for Jira ticket {{ jira_ticket }} are required to be pushed to QA:
 
           Ticket: {{ jira_ticket }}
           DB Object Value: {{ db_object }}
