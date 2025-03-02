@@ -53,6 +53,8 @@
         to: "{{ email_recipient }}"
         subject: "{{ jira_ticket }} - DB Objects Request push to QA"
         body: |
+          DB Team, 
+          
           The following DB Objects for Jira ticket {{ jira_ticket }} are required to be pushed to QA:
 
           Ticket: {{ jira_ticket }}
