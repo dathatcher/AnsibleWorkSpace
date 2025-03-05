@@ -1,51 +1,37 @@
 - name: Webhook-Triggered PR Merge - Query Jira and Send Email
   hosts: localhost
   gather_facts: no
+  vars_files:
+    - vault.yml  # Load encrypted secrets from Ansible Vault
+
   vars:
     jira_base_url: "https://davidaustinthatcher.atlassian.net"
-    jira_api_token: "{{ lookup('env', 'JIRA_API_TOKEN') }}"
-    jira_user_email: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"
-    webhook_payload_file: "/tmp/webhook_payload.json"  # Webhook payload file location
-    branch_prefix: "SCRUM-"  # Prefix to extract Jira ticket numbers from branch names
-    custom_field_id: "customfield_10039"  # Jira custom field ID for DB Objects
-    email_recipient: "{{ lookup('env', 'TO_EMAIL') }}"
+    branch_prefix: "SCRUM-"  # Prefix to identify Jira ticket numbers in branch names
+    custom_field_id: "customfield_10039"
+    email_recipient: "{{ lookup('env', 'TO_EMAIL') }}"  # Email recipient from environment variable
     smtp_server: "smtp.gmail.com"
     smtp_port: 587
-    smtp_username: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"
-    smtp_password: "{{ lookup('env', 'GMAIL_APP_PASSWORD') }}"
+    smtp_username: "{{ jira_user_email }}"
 
   tasks:
-    - name: Read Webhook Payload
-      slurp:
-        src: "{{ webhook_payload_file }}"
-      register: webhook_data
-
-    - name: Parse Webhook JSON
+    - name: Extract PR Branch and Merge Status from Webhook
       set_fact:
-        webhook_json: "{{ webhook_data['content'] | b64decode | from_json }}"
+        pr_branch: "{{ lookup('vars', 'webhook_payload.pull_request.head.ref') }}"
+        merged_branch: "{{ lookup('vars', 'webhook_payload.pull_request.base.ref') }}"
+        pr_merged: "{{ lookup('vars', 'webhook_payload.pull_request.merged') | default(False) }}"
 
-    - name: Extract PR Branches and Merge Status
-      set_fact:
-        pr_branch: "{{ webhook_json.pull_request.head.ref }}"
-        merged_branch: "{{ webhook_json.pull_request.base.ref }}"
-        pr_merged: "{{ webhook_json.pull_request.merged | default(false) }}"
-
-    - name: Debug - Show Extracted Branch and Merge Status
+    - name: Debug - Show Extracted Branch Info
       debug:
         msg: "PR Branch: {{ pr_branch }} | Merged Into: {{ merged_branch }} | Merged: {{ pr_merged }}"
 
     - name: Proceed only if PR was merged into QA
       fail:
         msg: "This PR was not merged into QA, skipping execution."
-      when: merged_branch != "QA" or pr_merged != true
+      when: merged_branch != "QA" or not pr_merged
 
     - name: Extract Jira Ticket Number from PR Branch
       set_fact:
         jira_ticket: "{{ pr_branch | regex_replace('^' + branch_prefix + '(\\d+).*', branch_prefix + '\\1') }}"
-
-    - name: Debug - Show Extracted Jira Ticket Number
-      debug:
-        msg: "Extracted Jira Ticket: {{ jira_ticket }}"
 
     - name: Fetch Jira Ticket Data
       uri:
@@ -58,7 +44,7 @@
       register: jira_response
       when: jira_ticket is not none
 
-    - name: Extract DB Object Value from Jira
+    - name: Extract DB Object Value
       set_fact:
         db_object: "{{ jira_response.json.fields[custom_field_id] | default('') }}"
       when: jira_ticket is not none
@@ -75,10 +61,10 @@
         username: "{{ smtp_username }}"
         password: "{{ smtp_password }}"
         to: "{{ email_recipient }}"
-        subject: "{{ jira_ticket }} - DB Objects Request Push to QA"
+        subject: "{{ jira_ticket }} - DB Objects Request push to QA"
         body: |
-          DB Team,
-
+          DB Team, 
+          
           The following DB Objects for Jira ticket {{ jira_ticket }} are required to be pushed to QA:
 
           Ticket: {{ jira_ticket }}

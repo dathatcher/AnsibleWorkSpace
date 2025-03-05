@@ -1,0 +1,1 @@
+echo '{ "pull_request": { "head": { "ref": "SCRUM-1" }, "base": { "ref": "QA" }, "merged": true }}' > /tmp/webhook_payload.json
