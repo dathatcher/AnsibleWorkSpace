@@ -1,3 +1,4 @@
+# DB Object interation 1 to Test Jira Integration, grabbing jira ticket from branch
 - name: Webhook-Triggered PR Merge - Query Jira and Send Email
   hosts: localhost
   gather_facts: no
