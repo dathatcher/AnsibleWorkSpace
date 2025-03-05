@@ -1,0 +1,88 @@
+- name: Triggered by Webhook - Fetch and filter GitHub branches, then query Jira and send email
+  hosts: localhost
+  gather_facts: no
+  vars:
+    jira_base_url: "https://davidaustinthatcher.atlassian.net" 
+    jira_api_token: "{{ lookup('env', 'JIRA_API_TOKEN') }}"
+    jira_user_email: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"
+    webhook_payload_file: "/tmp/webhook_payload.json"  # File where webhook payload is stored
+    branch_prefix: "SCRUM-"  # Prefix to identify Jira ticket numbers in branch names
+    custom_field_id: "customfield_10039"  # Custom field in Jira
+    email_recipient: "{{ lookup('env', 'TO_EMAIL') }}"  
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    smtp_username: "{{ lookup('env', 'JIRA_USER_EMAIL') }}"  
+    smtp_password: "{{ lookup('env', 'GMAIL_APP_PASSWORD') }}"  
+
+  tasks:
+    - name: Read Webhook Payload
+      slurp:
+        src: "{{ webhook_payload_file }}"
+      register: webhook_data
+
+    - name: Parse Webhook JSON
+      set_fact:
+        pr_branch: "{{ (webhook_data['content'] | b64decode | from_json).pull_request.head.ref }}"
+        merged_branch: "{{ (webhook_data['content'] | b64decode | from_json).pull_request.base.ref }}"
+
+    - name: Debug - Show Extracted Branch Info
+      debug:
+        msg: "PR Branch: {{ pr_branch }} | Merged Into: {{ merged_branch }}"
+
+    - name: Proceed only if PR was merged into QA
+      fail:
+        msg: "This PR was not merged into QA, skipping execution."
+      when: merged_branch != "QA"
+
+    - name: Extract Jira Ticket Number from PR Branch
+      set_fact:
+        jira_ticket: "{{ pr_branch | regex_replace('^' + branch_prefix + '(\\d+).*', branch_prefix + '\\1') }}"
+
+    - name: Display Extracted Jira Ticket Number
+      debug:
+        msg: "Extracted Jira Ticket: {{ jira_ticket }}"
+
+    - name: Fetch Jira Ticket Data
+      uri:
+        url: "{{ jira_base_url }}/rest/api/2/issue/{{ jira_ticket }}"
+        method: GET
+        headers:
+          Authorization: "Basic {{ (jira_user_email + ':' + jira_api_token) | b64encode }}"
+          Accept: "application/json"
+        return_content: yes
+      register: jira_response
+      when: jira_ticket is not none
+
+    - name: Extract DB Object Value
+      set_fact:
+        db_object: "{{ jira_response.json.fields[custom_field_id] | default('') }}"
+      when: jira_ticket is not none
+
+    - name: Check if DB Object is Set
+      set_fact:
+        send_email: "{{ db_object | length > 0 }}"
+      when: jira_ticket is not none
+
+    - name: Send Email with Jira DB Object Information
+      mail:
+        host: "{{ smtp_server }}"
+        port: "{{ smtp_port }}"
+        username: "{{ smtp_username }}"
+        password: "{{ smtp_password }}"
+        to: "{{ email_recipient }}"
+        subject: "{{ jira_ticket }} - DB Objects Request push to QA"
+        body: |
+          DB Team, 
+          
+          The following DB Objects for Jira ticket {{ jira_ticket }} are required to be pushed to QA:
+
+          Ticket: {{ jira_ticket }}
+
+          Link to Ticket: https://davidaustinthatcher.atlassian.net/browse/{{ jira_ticket }}
+
+          DB Object Value: {{ db_object }}
+
+          This is an automated message from Ansible.
+        subtype: plain
+        secure: starttls
+      when: send_email | default(false)
