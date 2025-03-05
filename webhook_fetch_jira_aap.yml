@@ -1,4 +1,4 @@
-# DB Object interation 2 to Test Jira Integration, grabbing jira ticket from branch
+# DB Object interation 2 to Test Integration with Ansible Application Platform instea of simulating in iteraction 1
 - name: Webhook-Triggered PR Merge - Query Jira and Send Email
   hosts: localhost
   gather_facts: no
