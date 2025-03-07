@@ -1,25 +1,15 @@
-# DB Object interation 2 to Test Integration with Ansible Application Platform instea of simulating in iteraction 1
 - name: Webhook-Triggered PR Merge - Query Jira and Send Email
   hosts: localhost
   gather_facts: no
   vars_files:
     - vault.yml  # Load encrypted secrets from Ansible Vault
 
-  vars:
-    jira_base_url: "https://davidaustinthatcher.atlassian.net"
-    branch_prefix: "SCRUM-"  # Prefix to identify Jira ticket numbers in branch names
-    custom_field_id: "customfield_10039"
-    email_recipient: "{{ lookup('env', 'TO_EMAIL') }}"  # Email recipient from environment variable
-    smtp_server: "smtp.gmail.com"
-    smtp_port: 587
-    smtp_username: "{{ jira_user_email }}"
-
   tasks:
-    - name: Extract PR Branch and Merge Status from Webhook
+    - name: Extract PR Branch and Merge Status from Webhook (AAP Extra Vars)
       set_fact:
-        pr_branch: "{{ lookup('vars', 'webhook_payload.pull_request.head.ref') }}"
-        merged_branch: "{{ lookup('vars', 'webhook_payload.pull_request.base.ref') }}"
-        pr_merged: "{{ lookup('vars', 'webhook_payload.pull_request.merged') | default(False) }}"
+        pr_branch: "{{ ansible_extra_vars.pull_request.head.ref }}"
+        merged_branch: "{{ ansible_extra_vars.pull_request.base.ref }}"
+        pr_merged: "{{ ansible_extra_vars.pull_request.merged | default(False) }}"
 
     - name: Debug - Show Extracted Branch Info
       debug:
@@ -32,11 +22,11 @@
 
     - name: Extract Jira Ticket Number from PR Branch
       set_fact:
-        jira_ticket: "{{ pr_branch | regex_replace('^' + branch_prefix + '(\\d+).*', branch_prefix + '\\1') }}"
+        jira_ticket: "{{ pr_branch | regex_replace('^SCRUM-(\\d+).*', 'SCRUM-\\1') }}"
 
     - name: Fetch Jira Ticket Data
       uri:
-        url: "{{ jira_base_url }}/rest/api/2/issue/{{ jira_ticket }}"
+        url: "https://davidaustinthatcher.atlassian.net/rest/api/2/issue/{{ jira_ticket }}"
         method: GET
         headers:
           Authorization: "Basic {{ (jira_user_email + ':' + jira_api_token) | b64encode }}"
@@ -47,7 +37,7 @@
 
     - name: Extract DB Object Value
       set_fact:
-        db_object: "{{ jira_response.json.fields[custom_field_id] | default('') }}"
+        db_object: "{{ jira_response.json.fields['customfield_10039'] | default('') }}"
       when: jira_ticket is not none
 
     - name: Check if DB Object is Set
@@ -57,15 +47,15 @@
 
     - name: Send Email with Jira DB Object Information
       mail:
-        host: "{{ smtp_server }}"
-        port: "{{ smtp_port }}"
-        username: "{{ smtp_username }}"
+        host: "smtp.gmail.com"
+        port: 587
+        username: "{{ jira_user_email }}"
         password: "{{ smtp_password }}"
         to: "{{ email_recipient }}"
         subject: "{{ jira_ticket }} - DB Objects Request push to QA"
         body: |
-          DB Team, 
-          
+          DB Team,
+
           The following DB Objects for Jira ticket {{ jira_ticket }} are required to be pushed to QA:
 
           Ticket: {{ jira_ticket }}
